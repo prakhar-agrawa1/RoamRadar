@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RoamRadar — VT Campus WiFi Coverage</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+</head>
+<body>
+  <div id="app">
+    <aside id="sidebar">
+      <div id="header">
+        <h1>📡 RoamRadar</h1>
+        <p class="subtitle">VT Campus WiFi Coverage Agent</p>
+        <p class="tagline">The network is already a sensor.</p>
+      </div>
+
+      <div class="panel" id="controls">
+        <button id="gps-btn" class="btn-primary">📍 Use My Location</button>
+        <div class="manual-input">
+          <input type="number" id="lat-input" placeholder="Lat" step="0.0001" />
+          <input type="number" id="lon-input" placeholder="Lon" step="0.0001" />
+          <button id="lookup-btn" class="btn-secondary">Check</button>
+        </div>
+        <p class="hint">Click the map to check any spot.</p>
+      </div>
+
+      <div class="panel" id="status-panel">
+        <h2>📶 Connection Status</h2>
+        <div id="status-content" class="status-empty">Click the map or use GPS to check your signal.</div>
+      </div>
+
+      <div class="panel" id="recommend-panel">
+        <h2>🤖 AI Agent</h2>
+        <div id="recommend-content" class="status-empty">Move to a location to get recommendations.</div>
+      </div>
+
+      <div class="panel" id="legend">
+        <h3>Legend</h3>
+        <div class="legend-row"><span class="dot d-excellent"></span> Excellent (80+)</div>
+        <div class="legend-row"><span class="dot d-good"></span> Good (60–79)</div>
+        <div class="legend-row"><span class="dot d-poor"></span> Poor (40–59)</div>
+        <div class="legend-row"><span class="dot d-bad"></span> Bad (&lt;40)</div>
+        <div class="legend-divider"></div>
+        <div class="legend-row"><span class="dot d-real"></span> Real Data</div>
+        <div class="legend-row"><span class="dot d-synth"></span> Synthetic Data</div>
+      </div>
+
+      <div class="footer">VTHacks 2026 · Deloitte × Databricks</div>
+    </aside>
+
+    <div id="map"></div>
+  </div>
+  <script src="{{ url_for('static', filename='app.js') }}"></script>
+</body>
+</html>
