@@ -48,44 +48,6 @@ function qualityLabel(s) {
   return 'Bad';
 }
 
-// ---- Load coverage ----
-fetch('/api/coverage')
-  .then(r => r.json())
-  .then(data => {
-    coverageLayer = L.layerGroup();
-    data.features.forEach(f => {
-      const [lon, lat] = f.geometry.coordinates;
-      const p = f.properties;
-      const color = scoreColor(p.teams_ready_score);
-      const isReal = p.data_source === 'real';
-
-      const marker = L.circleMarker([lat, lon], {
-        radius: isReal ? 8 : 6,
-        fillColor: color,
-        color: color,
-        fillOpacity: isReal ? 0.9 : 0.5,
-        weight: isReal ? 2 : 1,
-      });
-
-      const dl = p.download_mbps != null ? `${p.download_mbps} Mbps` : 'N/A';
-      marker.bindPopup(`
-        <div style="font-size:13px;line-height:1.5">
-          <strong>${p.location_name}</strong><br>
-          <span style="color:${color}">●</span> Score: ${p.teams_ready_score} (${qualityLabel(p.teams_ready_score)})<br>
-          Signal: ${p.signal_pct}% · RSSI: ${p.estimated_rssi_dbm} dBm<br>
-          Band: ${p.band} · Latency: ${p.latency_ms}ms<br>
-          Jitter: ${p.jitter_ms}ms · Loss: ${p.packet_loss_pct}%<br>
-          Download: ${dl}<br>
-          <em style="color:#888">${p.data_source}</em>
-        </div>
-      `);
-      coverageLayer.addLayer(marker);
-    });
-    coverageLayer.addTo(map);
-    console.log(`Loaded ${data.features.length} coverage points`);
-  })
-  .catch(err => console.error('Coverage load failed:', err));
-
 // ---- Campus reference locations (solid score-colored circles) ----
 fetch('/api/locations')
   .then(r => r.json())
@@ -97,7 +59,7 @@ fetch('/api/locations')
       const score = p.teams_ready_score;
       const color = score != null ? scoreColor(score) : '#888';
       L.circleMarker([lat, lon], {
-        radius: 16,
+        radius: 10,
         fillColor: color,
         color: color,
         fillOpacity: 0.75,
