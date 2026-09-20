@@ -93,6 +93,26 @@ body { font-family: 'Segoe UI', system-ui, sans-serif; }
   100% { transform: scale(2.5); opacity: 0; }
 }
 
+/* ---------- Campus location labels ---------- */
+.campus-label {
+  background: rgba(15, 15, 30, 0.75);
+  border: 1px solid rgba(74, 74, 240, 0.4);
+  border-radius: 4px;
+  color: #ccc;
+  font-size: 9px;
+  font-weight: 600;
+  padding: 1px 5px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+  text-shadow: none;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+/* Hide campus labels on mobile to reduce clutter */
+@media (max-width: 768px) {
+  .campus-label { font-size: 8px; padding: 1px 3px; }
+}
+
 /* =========================================
    MOBILE / PHONE LAYOUT (≤768px)
    Map on top, dashboard panels scroll below
