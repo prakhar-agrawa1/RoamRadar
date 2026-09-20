@@ -57,25 +57,28 @@ fetch('/api/coverage')
       const [lon, lat] = f.geometry.coordinates;
       const p = f.properties;
       const color = scoreColor(p.teams_ready_score);
-      const isReal = p.data_source === 'real';
 
       const marker = L.circleMarker([lat, lon], {
-        radius: isReal ? 8 : 6,
+        radius: 8,
         fillColor: color,
-        color: isReal ? '#fff' : color,
-        fillOpacity: isReal ? 0.9 : 0.5,
-        weight: isReal ? 2 : 1,
+        color: '#fff',
+        fillOpacity: 0.85,
+        weight: 2,
+      });
+
+      marker.bindTooltip(`${p.location_name}: ${p.teams_ready_score}`, {
+        permanent: true, direction: 'top', className: 'loc-label', offset: [0, -4]
       });
 
       const dl = p.download_mbps != null ? `${p.download_mbps} Mbps` : 'N/A';
       marker.bindPopup(`
         <div style="font-size:13px;line-height:1.5">
           <strong>${p.location_name}</strong><br>
-          <span style="color:${color}">●</span> Score: ${p.teams_ready_score} (${qualityLabel(p.teams_ready_score)})<br>
+          <span style="color:${color}">●</span> Avg Score: ${p.teams_ready_score} (${qualityLabel(p.teams_ready_score)})<br>
+          Points: ${p.point_count}<br>
           Signal: ${p.signal_pct}% · RSSI: ${p.estimated_rssi_dbm} dBm<br>
-          Band: ${p.band} · Latency: ${p.latency_ms}ms<br>
-          Jitter: ${p.jitter_ms}ms · Loss: ${p.packet_loss_pct}%<br>
-          Download: ${dl}<br>
+          Latency: ${p.latency_ms}ms · Jitter: ${p.jitter_ms}ms<br>
+          Loss: ${p.packet_loss_pct}% · Download: ${dl}<br>
           <em style="color:#888">${p.data_source}</em>
         </div>
       `);
@@ -168,13 +171,8 @@ function checkSignal(lat, lon) {
             <div class="rec-meta">${r.distance_meters}m away · Signal ${r.signal_pct}% · ${r.latency_ms}ms · ${r.data_source}</div>
           </div>
         `;
-        // Add marker on map
-        const m = L.circleMarker([r.latitude, r.longitude], {
-          radius: 12, fillColor: scoreColor(r.teams_ready_score),
-          color: '#fff', fillOpacity: 0.7, weight: 3,
-        }).addTo(map);
-        m.bindPopup(`<strong>${r.location_name}</strong><br>Score: ${r.teams_ready_score}<br>${r.distance_meters}m away`);
-        recMarkers.push(m);
+        // Recommendation markers now use the existing coverage circles
+        // (no separate larger circles on the map)
       });
       document.getElementById('recommend-content').innerHTML = html;
 

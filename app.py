@@ -174,26 +174,41 @@ def index():
 
 @app.route('/api/coverage')
 def get_coverage():
-    """Return all coverage points as GeoJSON FeatureCollection."""
+    """Return coverage points grouped by location as GeoJSON FeatureCollection.
+    Each feature is one location with the average score of all points under it."""
     if DATA is None:
         return jsonify({'error': 'data not loaded'}), 500
+    loc_agg = DATA.groupby('location_name').agg(
+        latitude=('latitude', 'mean'),
+        longitude=('longitude', 'mean'),
+        teams_ready_score=('teams_ready_score', 'mean'),
+        signal_pct=('signal_pct', 'mean'),
+        estimated_rssi_dbm=('estimated_rssi_dbm', 'mean'),
+        latency_ms=('latency_ms', 'mean'),
+        jitter_ms=('jitter_ms', 'mean'),
+        packet_loss_pct=('packet_loss_pct', 'mean'),
+        download_mbps=('download_mbps', 'mean'),
+        data_source=('data_source', 'first'),
+        point_count=('teams_ready_score', 'count'),
+    ).reset_index()
     features = []
-    for _, r in DATA.iterrows():
+    for _, r in loc_agg.iterrows():
         features.append({
             'type': 'Feature',
             'geometry': {'type': 'Point', 'coordinates': [float(r['longitude']), float(r['latitude'])]},
             'properties': {
                 'location_name': str(r['location_name']),
                 'data_source': str(r['data_source']),
-                'teams_ready_score': float(r['teams_ready_score']),
-                'signal_pct': int(r['signal_pct']) if pd.notna(r['signal_pct']) else None,
-                'estimated_rssi_dbm': float(r['estimated_rssi_dbm']) if pd.notna(r['estimated_rssi_dbm']) else None,
-                'band': str(r['band']),
-                'latency_ms': float(r['latency_ms']) if pd.notna(r['latency_ms']) else None,
-                'jitter_ms': float(r['jitter_ms']) if pd.notna(r['jitter_ms']) else None,
-                'packet_loss_pct': float(r['packet_loss_pct']) if pd.notna(r['packet_loss_pct']) else None,
-                'download_mbps': float(r['download_mbps']) if pd.notna(r['download_mbps']) else None,
-                'upload_mbps': float(r['upload_mbps']) if pd.notna(r['upload_mbps']) else None,
+                'teams_ready_score': round(float(r['teams_ready_score']), 1),
+                'signal_pct': round(float(r['signal_pct']), 1) if pd.notna(r['signal_pct']) else None,
+                'estimated_rssi_dbm': round(float(r['estimated_rssi_dbm']), 1) if pd.notna(r['estimated_rssi_dbm']) else None,
+                'band': 'avg',
+                'latency_ms': round(float(r['latency_ms']), 1) if pd.notna(r['latency_ms']) else None,
+                'jitter_ms': round(float(r['jitter_ms']), 2) if pd.notna(r['jitter_ms']) else None,
+                'packet_loss_pct': round(float(r['packet_loss_pct']), 1) if pd.notna(r['packet_loss_pct']) else None,
+                'download_mbps': round(float(r['download_mbps']), 1) if pd.notna(r['download_mbps']) else None,
+                'upload_mbps': None,
+                'point_count': int(r['point_count']),
             },
         })
     return jsonify({'type': 'FeatureCollection', 'features': features})
