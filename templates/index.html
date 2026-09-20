@@ -42,31 +42,29 @@
 
     /* Mobile & Landscape Fix - Natural Scrolling Page */
     @media (max-width: 950px) {
-      /* 1. Release the full-screen lock so the user can scroll normally */
+      /* Release all screen locks */
       html, body {
         height: auto; 
         overflow: auto; 
       }
       
       #app {
-        flex-direction: column-reverse; /* Puts Map on top, Info on bottom */
+        display: block; /* Kills flexbox. Naturally stacks Sidebar on top, Map on bottom */
         height: auto;
         overflow: visible;
       }
       
-      #map {
-        width: 100%;
-        height: 55vh; /* Gives the map a nice solid block at the top */
-        min-height: 400px; /* Ensures it never gets too squished */
-        flex-shrink: 0;
-        z-index: 1;
-      }
-      
       #sidebar {
         width: 100%;
-        height: auto; /* Let it grow based on content */
-        overflow-y: visible; /* Disable internal scroll, use normal page scroll */
+        height: auto; 
+        overflow: visible; 
         box-shadow: none;
+      }
+
+      #map {
+        width: 100%;
+        height: 500px; /* A solid, fixed block they scroll down to */
+        z-index: 1;
       }
     }
   </style>
