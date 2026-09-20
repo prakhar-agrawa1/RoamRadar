@@ -170,3 +170,10 @@ body { font-family: 'Segoe UI', system-ui, sans-serif; }
   .metric-label { font-size: 0.65rem; }
   .metric-value { font-size: 0.95rem; }
 }
+
+#brand-logo {
+  max-width: 100%;
+  height: auto;
+  display: block;
+  margin-bottom: 12px;
+}
