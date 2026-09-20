@@ -83,6 +83,47 @@ SYNTHETIC_LOCATIONS = [
     ("Owens Hall",            37.2290, -80.4268, 0.72),
 ]
 
+# Campus reference locations — every data point is assigned the nearest one
+CAMPUS_LOCATIONS = [
+    ("Bus Stop Bay 1",            37.232077, -80.424637),
+    ("Bus Stop Bay 5",            37.231420, -80.424917),
+    ("McComas Hall",              37.220655, -80.421332),
+    ("Payne Hall",                37.225678, -80.419804),
+    ("Orange Loop",               37.229990, -80.426553),
+    ("Burruss Hall",              37.228623, -80.423225),
+    ("Eggleston Quad",            37.227134, -80.419530),
+    ("Newman Library",            37.228369, -80.418996),
+    ("Drillfield",                37.227782, -80.422278),
+    ("Squires",                   37.229279, -80.417411),
+    ("Torgersen Hall",            37.229797, -80.420767),
+    ("Upper Quad",                37.231051, -80.419945),
+    ("Data and Decision Sciences",37.231249, -80.427444),
+    ("Moss Arts Center",          37.231512, -80.417846),
+    ("Goodwin Hall",              37.232110, -80.425480),
+    ("Pamplin Hall",              37.228115, -80.424900),
+    ("Rec Sports Field House",    37.215252, -80.418961),
+    ("English Field",             37.218447, -80.424554),
+    ("Duck Pond Lot",             37.220611, -80.428841),
+    ("Litton Reaves",             37.221924, -80.423678),
+    ("Hutcheson Hall",            37.225348, -80.423706),
+    ("Lane Stadium",              37.219816, -80.418000),
+    ("Ag Quad",                   37.225935, -80.417331),
+    ("Slusher Quad",              37.225700, -80.421762),
+    ("Vet Med",                   37.217654, -80.426913),
+    ("Dietrick Quad",             37.223793, -80.420248),
+    ("Pritchard Quad",            37.224927, -80.419078),
+    ("Turner Place",              37.230876, -80.422393),
+]
+
+def nearest_campus_location(lat, lon):
+    """Return the name of the nearest campus reference location."""
+    best_name, best_dist = None, float('inf')
+    for name, c_lat, c_lon in CAMPUS_LOCATIONS:
+        d = haversine(lat, lon, c_lat, c_lon)
+        if d < best_dist:
+            best_dist, best_name = d, name
+    return best_name
+
 
 def generate_synthetic(real_df):
     """Generate synthetic WiFi data calibrated to the real distribution."""
@@ -158,6 +199,9 @@ def load_data():
     print(f"Generated {len(synth_df)} synthetic rows")
     all_df = pd.concat([real_df, synth_df], ignore_index=True)
     all_df['teams_ready_score'] = all_df.apply(compute_teams_ready_score, axis=1)
+    # Reassign every data point to its nearest campus reference location
+    all_df['location_name'] = all_df.apply(
+        lambda r: nearest_campus_location(r['latitude'], r['longitude']), axis=1)
     DATA = all_df
     print(f"Total: {len(DATA)} rows, avg score {DATA['teams_ready_score'].mean():.1f}")
     return DATA
@@ -170,6 +214,19 @@ def load_data():
 @app.route('/')
 def index():
     return render_template('index.html')
+
+
+@app.route('/api/locations')
+def get_locations():
+    """Return campus reference locations as GeoJSON FeatureCollection."""
+    features = []
+    for name, lat, lon in CAMPUS_LOCATIONS:
+        features.append({
+            'type': 'Feature',
+            'geometry': {'type': 'Point', 'coordinates': [lon, lat]},
+            'properties': {'name': name},
+        })
+    return jsonify({'type': 'FeatureCollection', 'features': features})
 
 
 @app.route('/api/coverage')

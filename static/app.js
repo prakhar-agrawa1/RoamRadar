@@ -86,6 +86,33 @@ fetch('/api/coverage')
   })
   .catch(err => console.error('Coverage load failed:', err));
 
+// ---- Campus reference locations (larger labeled circles) ----
+fetch('/api/locations')
+  .then(r => r.json())
+  .then(data => {
+    const locLayer = L.layerGroup();
+    data.features.forEach(f => {
+      const [lon, lat] = f.geometry.coordinates;
+      L.circleMarker([lat, lon], {
+        radius: 16,
+        fillColor: '#4a4af0',
+        color: '#fff',
+        fillOpacity: 0.12,
+        weight: 2,
+      }).addTo(locLayer)
+        .bindTooltip(f.properties.name, {
+          permanent: true,
+          direction: 'center',
+          className: 'campus-label',
+          offset: [0, -1],
+        });
+    });
+    locLayer.addTo(map);
+    locLayer.eachLayer(l => l.bringToBack());
+    console.log(`Loaded ${data.features.length} campus locations`);
+  })
+  .catch(err => console.error('Location load failed:', err));
+
 // ---- GPS button ----
 document.getElementById('gps-btn').addEventListener('click', () => {
   if (!navigator.geolocation) { alert('Geolocation not supported'); return; }
