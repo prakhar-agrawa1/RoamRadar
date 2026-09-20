@@ -8,26 +8,24 @@
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <style>
-    /* Mobile-first structural guarantees */
+    /* Base Desktop Styles */
     html, body {
       margin: 0;
       padding: 0;
       width: 100%;
       height: 100%;
-      overflow: hidden;
     }
+    
     #app {
       display: flex;
       flex-direction: row;
       width: 100vw;
       height: 100vh;
-      position: absolute;
-      top: 0;
-      left: 0;
+      overflow: hidden; /* Locks scroll on desktop */
     }
+    
     #sidebar {
       width: 380px;
-      max-width: 100%;
       height: 100%;
       overflow-y: auto;
       background: #fdfdfd;
@@ -36,22 +34,39 @@
       box-sizing: border-box;
       flex-shrink: 0;
     }
+    
     #map {
       flex-grow: 1;
       height: 100%;
     }
-    /* Stack vertically on mobile screens */
-    @media (max-width: 768px) {
+
+    /* Mobile & Landscape Fix - Natural Scrolling Page */
+    @media (max-width: 950px) {
+      /* 1. Release the full-screen lock so the user can scroll normally */
+      html, body {
+        height: auto; 
+        overflow: auto; 
+      }
+      
       #app {
-        flex-direction: column-reverse;
+        flex-direction: column-reverse; /* Puts Map on top, Info on bottom */
+        height: auto;
+        overflow: visible;
       }
-      #sidebar {
-        width: 100%;
-        height: 45vh;
-      }
+      
       #map {
         width: 100%;
-        height: 55vh;
+        height: 55vh; /* Gives the map a nice solid block at the top */
+        min-height: 400px; /* Ensures it never gets too squished */
+        flex-shrink: 0;
+        z-index: 1;
+      }
+      
+      #sidebar {
+        width: 100%;
+        height: auto; /* Let it grow based on content */
+        overflow-y: visible; /* Disable internal scroll, use normal page scroll */
+        box-shadow: none;
       }
     }
   </style>
