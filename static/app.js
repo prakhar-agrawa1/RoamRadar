@@ -79,6 +79,38 @@ fetch('/api/locations')
   })
   .catch(err => console.error('Location load failed:', err));
 
+// ---- Real data points from CSVs (small score-colored circles) ----
+fetch('/api/coverage')
+  .then(r => r.json())
+  .then(data => {
+    const realLayer = L.layerGroup();
+    data.features.filter(f => f.properties.data_source === 'real').forEach(f => {
+      const [lon, lat] = f.geometry.coordinates;
+      const p = f.properties;
+      const color = scoreColor(p.teams_ready_score);
+      L.circleMarker([lat, lon], {
+        radius: 5,
+        fillColor: color,
+        color: color,
+        fillOpacity: 0.9,
+        weight: 1,
+      }).addTo(realLayer)
+        .bindPopup(
+          `<div style="font-size:13px;line-height:1.5">` +
+          `<strong>${p.location_name}</strong><br>` +
+          `<span style="color:${color}">●</span> Score: ${p.teams_ready_score} (${qualityLabel(p.teams_ready_score)})<br>` +
+          `Signal: ${p.signal_pct}% · RSSI: ${p.estimated_rssi_dbm} dBm<br>` +
+          `Band: ${p.band} · Latency: ${p.latency_ms}ms<br>` +
+          `Download: ${p.download_mbps != null ? p.download_mbps + ' Mbps' : 'N/A'}<br>` +
+          `<em style="color:#888">real</em>` +
+          `</div>`
+        );
+    });
+    realLayer.addTo(map);
+    console.log(`Loaded real data points`);
+  })
+  .catch(err => console.error('Real data load failed:', err));
+
 // ---- GPS button ----
 document.getElementById('gps-btn').addEventListener('click', () => {
   if (!navigator.geolocation) { alert('Geolocation not supported'); return; }
@@ -161,13 +193,7 @@ function checkSignal(lat, lon) {
             <div class="rec-meta">${r.distance_meters}m away · Signal ${r.signal_pct}% · ${r.latency_ms}ms · ${r.data_source}</div>
           </div>
         `;
-        // Add marker on map
-        const m = L.circleMarker([r.latitude, r.longitude], {
-          radius: 12, fillColor: scoreColor(r.teams_ready_score),
-          color: '#fff', fillOpacity: 0.7, weight: 3,
-        }).addTo(map);
-        m.bindPopup(`<strong>${r.location_name}</strong><br>Score: ${r.teams_ready_score}<br>${r.distance_meters}m away`);
-        recMarkers.push(m);
+        // No separate map markers — use campus location circles only
       });
       document.getElementById('recommend-content').innerHTML = html;
 
