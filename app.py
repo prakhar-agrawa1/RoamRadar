@@ -65,22 +65,31 @@ def compute_teams_ready_score(row):
 
 
 SYNTHETIC_LOCATIONS = [
-    ("Torgersen Bridge",       37.2295, -80.4234, 0.95),
-    ("Burruss Hall Steps",     37.2296, -80.4259, 0.85),
-    ("Newman Library Front",  37.2299, -80.4238, 0.80),
-    ("Drillfield North",      37.2302, -80.4252, 0.65),
-    ("Drillfield South",      37.2285, -80.4252, 0.55),
-    ("Squires Student Center", 37.2291, -80.4238, 0.90),
-    ("Henderson Hall",        37.2307, -80.4215, 0.75),
-    ("Patton Hall",           37.2303, -80.4220, 0.70),
-    ("Goodwin Hall",          37.2297, -80.4231, 0.85),
-    ("War Memorial Chapel",  37.2311, -80.4255, 0.60),
-    ("Johnston Student Center", 37.2288, -80.4244, 0.88),
-    ("Dietrick Lawn",         37.2283, -80.4261, 0.50),
-    ("Payne Hall",            37.2306, -80.4255, 0.78),
-    ("Femoyer Hall",          37.2294, -80.4250, 0.82),
-    ("D2 Dining",             37.2280, -80.4272, 0.45),
-    ("Owens Hall",            37.2290, -80.4268, 0.72),
+    ("McComas Hall", 37.220655, -80.421332, 0.85),
+    ("Payne Hall", 37.225678, -80.419804, 0.78),
+    ("Orange Loop", 37.229990, -80.426553, 0.70),
+    ("Burruss Hall", 37.228623, -80.423225, 0.90),
+    ("Eggleston Quad", 37.227134, -80.419530, 0.75),
+    ("Newman Library", 37.228369, -80.418996, 0.88),
+    ("Drillfield", 37.227782, -80.422278, 0.65),
+    ("Squires Student Center", 37.229279, -80.417411, 0.90),
+    ("Torgersen Hall", 37.229797, -80.420767, 0.95),
+    ("Upper Quad", 37.231051, -80.419945, 0.80),
+    ("Data and Decision Sciences", 37.231249, -80.427444, 0.85),
+    ("Moss Arts Center", 37.231512, -80.417846, 0.82),
+    ("Goodwin Hall", 37.232110, -80.425480, 0.92),
+    ("Pamplin Hall", 37.228115, -80.424900, 0.78),
+    ("Rec Sports Field House", 37.215252, -80.418961, 0.60),
+    ("English Field", 37.218447, -80.424554, 0.55),
+    ("Duck Pond Lot", 37.220611, -80.428841, 0.50),
+    ("Litton Reaves", 37.221924, -80.423678, 0.72),
+    ("Hutcheson Hall", 37.225348, -80.423706, 0.76),
+    ("Lane Stadium", 37.219816, -80.418000, 0.85),
+    ("Ag Quad", 37.225935, -80.417331, 0.74),
+    ("Slusher Quad", 37.225700, -80.421762, 0.70),
+    ("Vet Med", 37.217654, -80.426913, 0.60),
+    ("Dietrick Quad", 37.223793, -80.420248, 0.68),
+    ("Pritchard Quad", 37.224927, -80.419078, 0.75),
 ]
 
 
@@ -238,47 +247,56 @@ def lookup():
 
 
 @app.route('/api/recommend', methods=['POST'])
-def recommend():
-    """Given lat/lon, return nearby spots with better scores."""
+def recommend_spots():
     if DATA is None:
         return jsonify({'error': 'data not loaded'}), 500
+        
     req = request.get_json(force=True)
-    ulat, ulon = req.get('latitude'), req.get('longitude')
-    min_score = req.get('min_score', 70)
-    if ulat is None or ulon is None:
+    lat = req.get('latitude')
+    lon = req.get('longitude')
+    
+    if lat is None or lon is None:
         return jsonify({'error': 'latitude and longitude required'}), 400
 
-    loc_scores = DATA.groupby(['location_name', 'latitude', 'longitude']).agg(
-        teams_ready_score=('teams_ready_score', 'mean'),
-        signal_pct=('signal_pct', 'mean'),
-        latency_ms=('latency_ms', 'mean'),
-        download_mbps=('download_mbps', 'mean'),
-        data_source=('data_source', 'first'),
-    ).reset_index()
-    loc_scores['distance_m'] = loc_scores.apply(
-        lambda r: haversine(ulat, ulon, r['latitude'], r['longitude']), axis=1)
-    better = loc_scores[loc_scores['teams_ready_score'] >= min_score].sort_values('teams_ready_score', ascending=False)
-    nearby = better[better['distance_m'] <= 500].head(5)
-    if nearby.empty:
-        nearby = better.head(5)
+    # 1. Calculate distance for all points
+    df = DATA.copy()
+    df['distance_meters'] = df.apply(lambda r: haversine(lat, lon, r['latitude'], r['longitude']), axis=1)
 
-    recs = []
-    for _, r in nearby.iterrows():
-        recs.append({
-            'location_name': str(r['location_name']),
-            'latitude': float(r['latitude']), 'longitude': float(r['longitude']),
-            'teams_ready_score': round(float(r['teams_ready_score']), 1),
-            'signal_pct': round(float(r['signal_pct']), 1),
-            'latency_ms': round(float(r['latency_ms']), 1),
-            'download_mbps': round(float(r['download_mbps']), 1) if pd.notna(r['download_mbps']) else None,
-            'distance_meters': round(float(r['distance_m']), 1),
-            'data_source': str(r['data_source']),
+    # 2. Filter for points within 100 meters (or fallback to closest if none are strictly under 100m)
+    nearby_df = df[df['distance_meters'] <= 100].copy()
+    if nearby_df.empty:
+        # Fallback to the top 15 closest if user is in a dead zone far from anything
+        nearby_df = df.nsmallest(15, 'distance_meters').copy()
+
+    # 3. Ensure diversity: Group by location/building, taking the highest score per building
+    # (Assuming location_name represents the building or zone name)
+    best_per_building = nearby_df.sort_values(by=['teams_ready_score', 'distance_meters'], ascending=[False, True])
+    best_per_building = best_per_building.drop_duplicates(subset=['location_name']).head(5)
+
+    recommendations = []
+    for _, row in best_per_building.iterrows():
+        recommendations.append({
+            "location_name": str(row['location_name']),
+            "latitude": float(row['latitude']),
+            "longitude": float(row['longitude']),
+            "teams_ready_score": float(row['teams_ready_score']),
+            "signal_pct": float(row['signal_pct']),
+            "latency_ms": float(row['latency_ms']),
+            "distance_meters": int(row['distance_meters']),
+            "data_source": str(row['data_source'])
         })
 
-    agent_msg = _agent_message(recs)
-    return jsonify({'user_location': {'latitude': ulat, 'longitude': ulon},
-                    'recommendations': recs, 'agent_message': agent_msg})
+    # 4. Craft dynamic agent message
+    if not recommendations:
+        agent_msg = "⚠️ No stable connection zones found nearby. Try moving to open campus paths."
+    else:
+        top_spot = recommendations[0]
+        agent_msg = f"💡 Best nearby option: **{top_spot['location_name']}** ({top_spot['distance_meters']}m away, Score: {top_spot['teams_ready_score']}/100). Distinct building zones mapped below."
 
+    return jsonify({
+        "agent_message": agent_msg,
+        "recommendations": recommendations
+    })
 
 def _agent_message(recs):
     if not recs:
