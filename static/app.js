@@ -1,7 +1,22 @@
 // ---- RoamRadar Frontend ----
 
 const VT_CENTER = [37.230, -80.424];
-const map = L.map('map').setView(VT_CENTER, 15);
+const map = L.map('map', { tap: true }).setView(VT_CENTER, 15);
+
+// Ensure Leaflet recalculates container size after layout settles (critical for mobile)
+setTimeout(() => map.invalidateSize(), 100);
+setTimeout(() => map.invalidateSize(), 500);
+
+let resizeTimer = null;
+window.addEventListener('resize', () => {
+  if (resizeTimer) clearTimeout(resizeTimer);
+  resizeTimer = setTimeout(() => map.invalidateSize(), 150);
+});
+
+// Also invalidate when returning to the page (mobile browsers may pause rendering)
+document.addEventListener('visibilitychange', () => {
+  if (!document.hidden) setTimeout(() => map.invalidateSize(), 200);
+});
 
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
   attribution: '&copy; OpenStreetMap', maxZoom: 19

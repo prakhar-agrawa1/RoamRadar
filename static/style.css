@@ -92,3 +92,81 @@ body { font-family: 'Segoe UI', system-ui, sans-serif; }
   0% { transform: scale(1); opacity: 0.8; }
   100% { transform: scale(2.5); opacity: 0; }
 }
+
+/* =========================================
+   MOBILE / PHONE LAYOUT (≤768px)
+   Map on top, dashboard panels scroll below
+   ========================================= */
+@media (max-width: 768px) {
+  #app {
+    flex-direction: column;
+  }
+
+  /* Map takes top ~45% of screen */
+  #map {
+    flex: none;
+    height: 45vh;
+    min-height: 280px;
+    width: 100vw;
+  }
+
+  /* Sidebar becomes the scrolling dashboard below the map */
+  #sidebar {
+    width: 100%;
+    min-width: unset;
+    flex: 1;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Compact the header */
+  #header { padding: 14px 16px 8px; }
+  #header h1 { font-size: 1.35rem; }
+  .subtitle { font-size: 0.8rem; }
+  .tagline { font-size: 0.7rem; }
+
+  /* Tighter panels */
+  .panel { padding: 10px 16px; }
+  .panel h2 { font-size: 0.95rem; }
+  .panel h3 { font-size: 0.8rem; }
+
+  /* Make GPS button and manual input row-friendly */
+  #controls .btn-primary {
+    padding: 12px 16px;
+    font-size: 0.95rem;
+  }
+  .manual-input { flex-wrap: wrap; }
+  .manual-input input {
+    flex: 1 1 80px;
+    font-size: 0.9rem;
+    padding: 10px;
+  }
+  .manual-input .btn-secondary {
+    padding: 10px 18px;
+    font-size: 0.9rem;
+  }
+  .hint { font-size: 0.72rem; }
+
+  /* Metric grid stays 2-col but slightly larger text */
+  .metric-value { font-size: 1.05rem; }
+
+  /* Recommendation cards: slightly bigger tap targets */
+  .rec-card { padding: 12px 14px; margin-bottom: 8px; }
+  .rec-name { font-size: 0.92rem; }
+  .rec-meta { font-size: 0.78rem; }
+
+  /* Legend: inline, more compact */
+  #legend .legend-row { font-size: 0.78rem; }
+
+  /* Footer */
+  .footer { padding: 14px; font-size: 0.68rem; }
+}
+
+/* Extra-small phones (≤380px) */
+@media (max-width: 380px) {
+  #header h1 { font-size: 1.2rem; }
+  .metric-grid { gap: 4px; }
+  .metric { padding: 6px 8px; }
+  .metric-label { font-size: 0.65rem; }
+  .metric-value { font-size: 0.95rem; }
+}
