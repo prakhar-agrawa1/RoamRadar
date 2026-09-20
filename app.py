@@ -303,3 +303,47 @@ DATA = load_data()
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 8000))
     app.run(host='0.0.0.0', port=port, debug=False)
+
+#AI Agent Test
+@app.route('/api/agent', methods=['POST'])
+def run_agent():
+    """Native Flask AI Agent endpoint (bypasses model serving scope errors)."""
+    if DATA is None:
+        return jsonify({'error': 'data not loaded'}), 500
+        
+    req = request.get_json(force=True)
+    lat = req.get('lat')
+    lon = req.get('lon')
+    meeting_soon = req.get('meeting_soon', True)
+    
+    if lat is None or lon is None:
+        return jsonify({'error': 'latitude and longitude required'}), 400
+
+    # Find nearest data point to user's live GPS
+    dists = DATA.apply(lambda r: haversine(lat, lon, r['latitude'], r['longitude']), axis=1)
+    nearest_idx = dists.idxmin()
+    nearest = DATA.loc[nearest_idx]
+    
+    current_score = float(nearest['teams_ready_score'])
+
+    # Proactive Agent Notification Logic
+    if meeting_soon and current_score < 60:
+        # Find a better nearby spot with a high score
+        good_spots = DATA[DATA['teams_ready_score'] >= 80].copy()
+        if not good_spots.empty:
+            good_spots['dist'] = good_spots.apply(lambda r: haversine(lat, lon, r['latitude'], r['longitude']), axis=1)
+            best_spot = good_spots.sort_values('dist').iloc[0]
+            
+            return jsonify({
+                "action": "notify",
+                "message": f"⚠️ Weak signal here ({current_score:.0f}/100). Your Teams call is starting soon—walk {best_spot['dist']:.0f}m to {best_spot['location_name']} for stable Wi-Fi.",
+                "suggested_lat": float(best_spot['latitude']),
+                "suggested_lon": float(best_spot['longitude'])
+            })
+
+    return jsonify({
+        "action": "ok", 
+        "message": "Signal is stable. You're good to take your call here!",
+        "suggested_lat": lat,
+        "suggested_lon": lon
+    })
