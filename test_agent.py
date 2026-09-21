@@ -20,8 +20,8 @@ def score_model(dataset):
     return response.json()
 
 if __name__ == '__main__':
-    # 1. Set your new token here temporarily for testing, or export it in your terminal
-    os.environ["DATABRICKS_TOKEN"] = "dapiaf52f74f0b0beefba37f1c245d580bd5"
+    # 1. Set new token here temporarily for testing, or export it in terminal
+    # os.environ["DATABRICKS_TOKEN"]
 
     # 2. Create the test payload
     test_data = pd.DataFrame({
