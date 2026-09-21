@@ -84,6 +84,20 @@ body { font-family: 'Segoe UI', system-ui, sans-serif; }
 /* ---------- Map ---------- */
 #map { flex: 1; height: 100vh; }
 
+/* ---------- Location labels on map ---------- */
+.loc-label {
+  background: rgba(15, 15, 30, 0.8);
+  color: #e0e0e0;
+  border: 1px solid #333;
+  border-radius: 4px;
+  padding: 1px 5px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  white-space: nowrap;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.3);
+}
+.loc-label::before { display: none; }
+
 /* ---------- Footer ---------- */
 .footer { text-align: center; padding: 10px; font-size: 0.7rem; color: #444; margin-top: auto; }
 
